@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI 증명사진 스튜디오</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+    <style>
+        @import url('https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/static/pretendard.min.css');
+        @import url('https://fonts.googleapis.com/css2?family=Nanum+Myeongjo:wght@400;700&display=swap');
+        
+        body { 
+            font-family: 'Pretendard', sans-serif;
+            background-color: #2c2a29;
+        }
+        .font-myeongjo { font-family: 'Nanum Myeongjo', serif; }
+
+        .hidden-file-input {
+            width: 0.1px;
+            height: 0.1px;
+            opacity: 0;
+            overflow: hidden;
+            position: absolute;
+            z-index: -1;
+        }
+
+        .modal {
+            display: none;
+            opacity: 0;
+            transition: opacity 300ms ease-in-out;
+        }
+        .modal.show {
+            display: flex;
+            opacity: 1;
+        }
+
+        /* Custom Slider Styles */
+        input[type=range] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+            cursor: pointer;
+            width: 100%;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            background: #4a5568; /* gray-700 */
+            height: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        input[type=range]::-moz-range-track {
+            background: #4a5568;
+            height: 0.5rem;
+            border-radius: 0.5rem;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            margin-top: -4px;
+            height: 1.25rem;
+            width: 1.25rem;
+            background-color: #e3d9c6;
+            border-radius: 9999px;
+            border: 2px solid #2c2a29;
+        }
+        input[type=range]::-moz-range-thumb {
+            height: 1.25rem;
+            width: 1.25rem;
+            background-color: #e3d9c6;
+            border-radius: 9999px;
+            border: 2px solid #2c2a29;
+        }
+    </style>
+</head>
+<body class="bg-[#2c2a29] min-h-screen text-[#e3d9c6] p-4 sm:p-8 flex flex-col items-center">
+
+    <div class="w-full max-w-5xl mx-auto">
+        <header class="text-center my-8">
+             <h1 class="text-5xl sm:text-6xl font-myeongjo font-bold">AI 증명사진 스튜디오</h1>
+             <p class="text-gray-400 mt-4 text-lg">사진 한 장으로 전문가 수준의 증명사진을 만들어보세요</p>
+        </header>
+ 
+        <main id="main-content" class="w-full">
+            <!-- Initial Upload and API Key Section -->
+            <div id="upload-section">
+                <div class="w-full p-8 sm:p-12 bg-black/20 border border-gray-700 rounded-lg text-center backdrop-blur-sm">
+                    <div id="image-placeholder">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mx-auto" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"></path><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"></path></svg>
+                        <h2 class="text-xl font-semibold mt-4 text-gray-300">증명사진으로 만들 얼굴 사진을 올려주세요</h2>
+                        <p class="text-gray-500 mt-2">정면을 바라보는 선명한 사진일수록 결과가 좋습니다.</p>
+                    </div>
+                    <div id="image-preview-container" class="hidden">
+                        <img id="image-preview" src="" alt="업로드된 원본" class="max-w-full max-h-80 mx-auto rounded-md object-contain">
+                    </div>
+
+                    <label for="image-upload" id="upload-label" class="mt-6 inline-block bg-[#e3d9c6] text-[#2c2a29] font-semibold py-2 px-6 rounded-md shadow-md hover:bg-white/80 transition-colors cursor-pointer">
+                        사진 선택하기
+                    </label>
+                    <input id="image-upload" type="file" accept="image/*" class="hidden-file-input">
+                </div>
+ 
+                <div class="w-full max-w-2xl mx-auto mt-8">
+                    <label for="api-key" class="block text-md font-semibold text-gray-400">Google Gemini API Key</label>
+                    <input type="password" id="api-key" class="mt-2 block w-full px-3 py-2 bg-black/20 border border-gray-700 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-[#e3d9c6] focus:border-[#e3d9c6] sm:text-sm" placeholder="AI-로 시작하는 API 키를 여기에 입력하세요">
+                    <p class="mt-2 text-sm text-gray-500 text-right">
+                    API 키가 없으신가요? <a href="https://aistudio.google.com/apikey" target="_blank" rel="noopener noreferrer" class="font-medium text-[#e3d9c6] hover:underline">여기서 발급받으세요.</a>
+                  </p>
+                </div>
+                
+                <div id="options-section" class="w-full max-w-2xl mx-auto mt-8 hidden">
+                    <div class="bg-black/20 border border-gray-700 rounded-lg p-6">
+                        <h3 class="text-lg font-semibold text-gray-300 mb-4">1. 생성할 사진 스타일 선택 (중복 가능)</h3>
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-x-4 gap-y-3 mb-6" id="style-checkboxes">
+                            <!-- Checkboxes will be dynamically inserted here -->
+                        </div>
+                
+                        <h3 class="text-lg font-semibold text-gray-300 mb-4">2. 스타일별 생성 개수 조절</h3>
+                        <div class="flex items-center gap-4">
+                            <input type="range" id="generation-count-slider" min="1" max="3" value="1" class="w-full">
+                            <span id="generation-count-value" class="font-bold text-lg text-[#e3d9c6] w-8 text-center bg-black/20 py-1 rounded-md">1</span>
+                        </div>
+                    </div>
+                     <p class="text-xs text-gray-500 text-center mt-4 px-2">
+                        <strong>참고:</strong> AI가 사용자의 선택(특히 각도)을 항상 완벽하게 따르지 않을 수 있습니다. 최상의 결과를 위해 여러 번 생성해 보시는 것을 권장합니다.
+                    </p>
+                    <div id="generate-button-container" class="text-center mt-6">
+                        <button id="generate-button" class="bg-[#8a6e50] text-white font-bold py-3 px-12 rounded-lg shadow-lg hover:bg-[#a18666] transition-all duration-300 ease-in-out transform hover:scale-105 disabled:bg-gray-700 disabled:text-gray-500 disabled:shadow-none disabled:transform-none disabled:cursor-not-allowed flex items-center justify-center text-lg mx-auto">
+                            증명사진 생성하기
+                        </button>
+                    </div>
+                </div>
+
+            </div>
+            
+            <!-- Error and Loading Section -->
+            <div id="error-message" class="hidden text-center my-4 p-3 bg-red-900/50 text-red-300 rounded-lg max-w-2xl mx-auto"></div>
+            <div id="spinner" class="hidden w-full flex justify-center items-center mt-12">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-[#e3d9c6]">
+                    <path d="M21 6v.397a5 5 0 0 1-2.418 4.349l-2.01 1.256a5 5 0 0 0-2.572 4.342V21"></path><path d="M3 18v-.397a5 5 0 0 1 2.418-4.349l-2.01-1.256a5 5 0 0 0 2.572-4.342V3"></path><path d="M3 6h18"></path><path d="M3 18h18"></path>
+                </svg>
+            </div>
+ 
+            <!-- Results Section -->
+            <div id="results-section" class="hidden">
+                <div class="text-center border-b border-gray-700 pb-8 mb-10">
+                    <h2 class="text-4xl font-myeongjo font-bold">AI 증명사진</h2>
+                    <p class="text-gray-400 mt-2">AI가 만든 증명사진 결과입니다.</p>
+                    <div class="flex justify-center items-center gap-4 mt-6">
+                        <button id="download-all-button" class="bg-green-600/80 text-white font-semibold py-2 px-5 rounded-md shadow-md hover:bg-green-500 transition-colors">모두 저장하기</button>
+                        <button id="reset-button" class="bg-gray-700/80 text-white font-semibold py-2 px-5 rounded-md shadow-md hover:bg-gray-600 transition-colors">새로 시작하기</button>
+                    </div>
+                </div>
+                <div id="results-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-8">
+                    <!-- Generated images will be injected here -->
+                </div>
+            </div>
+        </main>
+
+        <footer class="text-center text-gray-400 text-sm mt-16 pb-8">
+            <p>Made by 김진관 (닷커넥터)</p>
+            <p class="mt-1">배움, 나눔, 성장을 추구하는 연결주의자</p>
+        </footer>
+    </div>
+ 
+    <!-- Image Modal -->
+    <div id="image-modal" class="modal fixed inset-0 bg-black/80 items-center justify-center z-50">
+        <div class="relative bg-black/50 p-2 sm:p-4 rounded-lg shadow-2xl max-w-[90vw] max-h-[90vh]">
+            <img id="modal-image" src="" alt="확대된 이미지" class="max-w-full max-h-[85vh] object-contain rounded-md">
+            <button id="modal-close-button" class="absolute -top-4 -right-4 sm:top-2 sm:right-2 text-white bg-black/60 rounded-full p-1 hover:bg-white/20 transition-colors" aria-label="Close">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+            </button>
+        </div>
+    </div>
+    
+<script>
+document.addEventListener('DOMContentLoaded', () => {
+
+    // --- STATE MANAGEMENT ---
+    let originalImage = null; // { file, base64 }
+    let generatedImages = [];
+    let isGenerating = false;
+    let apiKey = '';
+    let generationCount = 1;
+
+    // --- DOM ELEMENTS ---
+    const imageUploadInput = document.getElementById('image-upload');
+    const uploadLabel = document.getElementById('upload-label');
+    const imagePlaceholder = document.getElementById('image-placeholder');
+    const imagePreviewContainer = document.getElementById('image-preview-container');
+    const imagePreview = document.getElementById('image-preview');
+    const apiKeyInput = document.getElementById('api-key');
+    const generateButton = document.getElementById('generate-button');
+    const errorMessageDiv = document.getElementById('error-message');
+    const spinner = document.getElementById('spinner');
+    const uploadSection = document.getElementById('upload-section');
+    const resultsSection = document.getElementById('results-section');
+    const resultsGrid = document.getElementById('results-grid');
+    const downloadAllButton = document.getElementById('download-all-button');
+    const resetButton = document.getElementById('reset-button');
+    const imageModal = document.getElementById('image-modal');
+    const modalImage = document.getElementById('modal-image');
+    const modalCloseButton = document.getElementById('modal-close-button');
+    const optionsSection = document.getElementById('options-section');
+    const styleCheckboxesContainer = document.getElementById('style-checkboxes');
+    const generationCountSlider = document.getElementById('generation-count-slider');
+    const generationCountValue = document.getElementById('generation-count-value');
+
+    // --- CONSTANTS ---
+    const PHOTO_STYLES = [
+        // 표준 증명사진
+        { name: "표준 (정면)", prompt: "**ABSOLUTE MANDATE: 100% STRAIGHT, FRONT-FACING PASSPORT-STYLE POSE.** This is the single most important, non-negotiable rule. The subject's head, torso, and shoulders MUST be perfectly square to the camera. ZERO rotation, tilting, or angling of the body is permitted. Explicitly REJECT the common portrait style where the body is angled and the head turns to the camera. This is a strict, government ID-style photo. A highly realistic, professional ID photograph. Medium shot, framed from the chest up. **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a clean, formal dark suit jacket and a white collared shirt. Background is a solid, uniform light gray. Neutral expression. 85mm portrait lens. Core facial features must be precisely preserved. No text. Final check: The pose must be perfectly straight-on." },
+        { name: "표준 (측면)", prompt: "**Primary Instruction: Classic Portrait Pose.** The subject's body should be angled gently to the left, while their head turns to look directly at the camera. This pose is the key requirement. Generate a highly realistic, professional ID photograph. Medium shot, framed from the chest up. **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a clean, formal dark suit jacket and a white collared shirt. Background is a solid, uniform light gray. Neutral expression. 85mm portrait lens. Core facial features, ethnicity, and gender must be precisely preserved. No text. The final image must clearly show the body-angled-left, head-forward pose." },
+        // 부드러운 인상
+        { name: "부드러운 (정면)", prompt: "**ABSOLUTE MANDATE: 100% STRAIGHT, FRONT-FACING PASSPORT-STYLE POSE.** This is the single most important, non-negotiable rule. The subject's head, torso, and shoulders MUST be perfectly square to the camera. ZERO rotation, tilting, or angling of the body is permitted. Explicitly REJECT the common portrait style where the body is angled and the head turns to the camera. This is a strict, government ID-style photo. A highly realistic, professional headshot photograph. **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a neat, dark-colored blazer and a light-colored round-neck blouse. Background is a solid, off-white with a hint of warmth. Gentle, subtle, approachable smile (mouth closed). 85mm portrait lens. Core facial features must be precisely preserved. No text. Final check: The pose must be perfectly straight-on." },
+        { name: "부드러운 (측면)", prompt: "**UTMOST PRIORITY: BODY ANGLED LEFT, HEAD FORWARD.** This is the most critical, non-negotiable instruction. The person's body MUST be clearly and precisely angled 30 degrees to the left. Their head MUST then turn to face the camera directly. This specific pose is mandatory. A highly realistic, professional headshot photograph. **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a neat, dark-colored blazer and a light-colored round-neck blouse. Background is a solid, off-white with a hint of warmth. Gentle, subtle, approachable smile (mouth closed). 85mm portrait lens. Core facial features, ethnicity, gender must be precisely preserved. No text. Final check: The pose must be body-left, head-forward." },
+        // 신뢰감 있는 인상
+        { name: "신뢰감 (정면)", prompt: "**ABSOLUTE MANDATE: 100% STRAIGHT, FRONT-FACING PASSPORT-STYLE POSE.** This is the single most important, non-negotiable rule. The subject's head, torso, and shoulders MUST be perfectly square to the camera. ZERO rotation, tilting, or angling of the body is permitted. Explicitly REJECT the common portrait style where the body is angled and the head turns to the camera. This is a strict, government ID-style photo. A highly realistic, professional ID-style photograph (headshot). **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a professional, well-fitted dark navy or charcoal suit. Background is a solid, clean, very light blue-gray. Confident and direct expression. 85mm portrait lens. Core facial features must be precisely preserved. No text. Final check: The pose must be perfectly straight-on." },
+        { name: "신뢰감 (측면)", prompt: "**Primary Pose Instruction: Professional Angled Portrait.** The subject's body is angled to the left, and their head turns to face the camera directly. This is the main pose for the photograph. A highly realistic, professional ID-style photograph (headshot). **Crucial Framing**: Ensure there is sufficient empty space above the subject's head. The top of the hair must NOT be cropped. Wearing a professional, well-fitted dark navy or charcoal suit. Background is a solid, clean, very light blue-gray. Confident and direct expression. 85mm portrait lens. Core facial features, ethnicity, and gender must be precisely preserved. No text. The final image should clearly feature this angled pose." },
+    ];
+
+    // --- INITIALIZATION ---
+    PHOTO_STYLES.forEach((style, index) => {
+        const div = document.createElement('div');
+        div.className = 'flex items-center';
+        div.innerHTML = `
+            <input id="style-${index}" type="checkbox" value="${index}" checked class="h-4 w-4 rounded border-gray-600 bg-gray-700 text-[#8a6e50] focus:ring-[#a18666] focus:ring-offset-gray-800">
+            <label for="style-${index}" class="ml-3 block text-sm font-medium text-gray-300">${style.name}</label>
+        `;
+        styleCheckboxesContainer.appendChild(div);
+    });
+    const styleCheckboxes = styleCheckboxesContainer.querySelectorAll('input[type="checkbox"]');
+
+
+    // --- UI UPDATE FUNCTIONS ---
+    const showError = (message) => {
+        errorMessageDiv.textContent = message;
+        errorMessageDiv.classList.remove('hidden');
+    };
+    const clearError = () => {
+        errorMessageDiv.textContent = '';
+        errorMessageDiv.classList.add('hidden');
+    };
+    const updateGenerateButtonState = () => {
+        const selectedStyles = Array.from(styleCheckboxes).filter(cb => cb.checked);
+        generateButton.disabled = isGenerating || !apiKey || !originalImage || selectedStyles.length === 0;
+    };
+    const renderResultsGrid = () => {
+        resultsGrid.innerHTML = '';
+        generatedImages.forEach((image, index) => {
+            const card = document.createElement('div');
+            card.className = "bg-black/20 rounded-md shadow-lg transition-all duration-300 ease-in-out hover:shadow-2xl hover:shadow-black/50 hover:-translate-y-2 group border border-gray-800 flex flex-col";
+            
+            const imageContainerContent = 
+                image.status === 'completed' ? `<img src="${image.src}" alt="${image.name}" class="w-full h-full object-cover transition-transform duration-300 group-hover:scale-105">` :
+                image.status === 'failed' ? `<div class="text-red-400 p-4 text-center">생성 실패</div>` :
+                `<div class="w-full h-full flex items-center justify-center"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="animate-spin text-gray-500"><path d="M21 12a9 9 0 1 1-6.219-8.56"></path></svg></div>`;
+
+            card.innerHTML = `
+                <div class="w-full bg-black rounded-t-md flex items-center justify-center overflow-hidden ${image.status === 'completed' ? 'cursor-pointer' : ''}" data-index="${index}" style="aspect-ratio: 3/4;">
+                    ${imageContainerContent}
+                </div>
+                <div class="p-3 flex-grow flex flex-col justify-between">
+                    <h3 class="font-semibold text-center text-md text-gray-300 mb-3">${image.name}</h3>
+                    <button 
+                        data-index="${index}"
+                        class="w-full bg-gray-700/80 text-white font-semibold py-2 px-4 rounded-md shadow-md hover:bg-gray-600 transition-colors disabled:bg-gray-800 disabled:text-gray-500 disabled:cursor-not-allowed flex items-center justify-center gap-2 download-button"
+                        ${image.status !== 'completed' ? 'disabled' : ''}
+                    >
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                        <span>저장하기</span>
+                    </button>
+                </div>
+            `;
+            resultsGrid.appendChild(card);
+        });
+    };
+
+    // --- CORE LOGIC FUNCTIONS ---
+    const handleImageChange = (e) => {
+        const file = e.target.files[0];
+        if (file) {
+            clearError();
+            const reader = new FileReader();
+            reader.onloadend = () => {
+                originalImage = { file: file, base64: reader.result };
+                imagePreview.src = originalImage.base64;
+                imagePlaceholder.classList.add('hidden');
+                imagePreviewContainer.classList.remove('hidden');
+                uploadLabel.textContent = '다른 사진 선택';
+                optionsSection.classList.remove('hidden');
+                updateGenerateButtonState();
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const getBase64Data = (dataUrl) => dataUrl.split(',')[1];
+
+    const generateImageAPI = async (userApiKey, prompt, base64ImageData, mimeType, retries = 3, delay = 1000) => {
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${userApiKey}`;
+        const payload = {
+            contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: base64ImageData } }] }],
+            generationConfig: { responseModalities: ['IMAGE'] },
+        };
+        try {
+            const response = await fetch(apiUrl, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify(payload) });
+            if (!response.ok) {
+                if (response.status === 429 && retries > 0) {
+                    await new Promise(res => setTimeout(res, delay));
+                    return generateImageAPI(userApiKey, prompt, base64ImageData, mimeType, retries - 1, delay * 2);
+                }
+                const errorData = await response.json();
+                throw new Error(errorData.error?.message || `API 요청 실패: ${response.status}`);
+            }
+            const result = await response.json();
+            const base64Data = result?.candidates?.[0]?.content?.parts?.find(p => p.inlineData)?.inlineData?.data;
+            if (!base64Data) {
+                console.error("API Response did not contain image data. Full response:", JSON.stringify(result, null, 2));
+                throw new Error("API 응답에서 이미지 데이터를 찾을 수 없습니다. 안전 필터에 의해 차단되었을 수 있습니다.");
+            }
+            return `data:image/png;base64,${base64Data}`;
+        } catch (err) {
+            console.error(`Error generating image for prompt "${prompt}":`, err);
+            showError(`이미지 생성 오류: ${err.message}`);
+            return null;
+        }
+    };
+
+    const handleGenerateClick = async () => {
+        const selectedStyleIndexes = Array.from(styleCheckboxes)
+            .filter(cb => cb.checked)
+            .map(cb => parseInt(cb.value, 10));
+
+        if (!originalImage || !apiKey || selectedStyleIndexes.length === 0) {
+            showError("사진을 선택하고, API 키를 입력하고, 하나 이상의 스타일을 선택해주세요.");
+            return;
+        }
+
+        isGenerating = true;
+        updateGenerateButtonState();
+        clearError();
+        uploadSection.classList.add('hidden');
+        spinner.classList.remove('hidden');
+        
+        const tasks = [];
+        selectedStyleIndexes.forEach(index => {
+            const style = PHOTO_STYLES[index];
+            for (let i = 0; i < generationCount; i++) {
+                tasks.push({
+                    name: generationCount > 1 ? `${style.name} ${i + 1}` : style.name,
+                    prompt: style.prompt,
+                });
+            }
+        });
+
+        generatedImages = tasks.map(task => ({ name: task.name, status: 'loading', src: null }));
+        renderResultsGrid();
+        resultsSection.classList.remove('hidden');
+        spinner.classList.add('hidden');
+
+        const originalBase64Data = getBase64Data(originalImage.base64);
+        const originalMimeType = originalImage.file.type;
+        
+        const generationPromises = tasks.map((task, index) =>
+            generateImageAPI(apiKey, task.prompt, originalBase64Data, originalMimeType).then(src => {
+                generatedImages[index] = { ...generatedImages[index], status: src ? 'completed' : 'failed', src: src };
+                renderResultsGrid();
+            })
+        );
+
+        await Promise.all(generationPromises);
+        isGenerating = false;
+        updateGenerateButtonState();
+    };
+
+    const handleDownload = (imageSrc, filename) => {
+        if (!imageSrc) return;
+        const link = document.createElement('a');
+        link.href = imageSrc;
+        link.download = `${filename.replace(/\s/g, '_')}.png`;
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+    };
+
+    const handleDownloadAll = async () => {
+        if (typeof window.JSZip === 'undefined') {
+            showError("다운로드 라이브러리를 불러오는 중입니다. 잠시 후 다시 시도해주세요.");
+            return;
+        }
+        const zip = new window.JSZip();
+        const imagePromises = generatedImages
+            .filter(img => img.status === 'completed')
+            .map(async (img) => {
+                const response = await fetch(img.src);
+                const blob = await response.blob();
+                zip.file(`${img.name.replace(/\s/g, '_')}.png`, blob);
+            });
+        await Promise.all(imagePromises);
+        zip.generateAsync({ type: "blob" }).then((content) => {
+            const link = document.createElement('a');
+            link.href = URL.createObjectURL(content);
+            link.download = "AI_증명사진.zip";
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+    };
+
+    const handleReset = () => {
+        originalImage = null;
+        generatedImages = [];
+        isGenerating = false;
+        
+        imageUploadInput.value = '';
+        imagePreview.src = '';
+        imagePlaceholder.classList.remove('hidden');
+        imagePreviewContainer.classList.add('hidden');
+        uploadLabel.textContent = '사진 선택하기';
+        
+        resultsSection.classList.add('hidden');
+        uploadSection.classList.remove('hidden');
+        optionsSection.classList.add('hidden');
+        
+        styleCheckboxes.forEach(cb => cb.checked = true);
+        generationCountSlider.value = 1;
+        generationCountValue.textContent = '1';
+        generationCount = 1;
+
+        clearError();
+        updateGenerateButtonState();
+    };
+
+    // --- EVENT LISTENERS ---
+    imageUploadInput.addEventListener('change', handleImageChange);
+    apiKeyInput.addEventListener('input', (e) => {
+        apiKey = e.target.value;
+        clearError();
+        updateGenerateButtonState();
+    });
+
+    styleCheckboxes.forEach(checkbox => {
+        checkbox.addEventListener('change', updateGenerateButtonState);
+    });
+
+    generationCountSlider.addEventListener('input', (e) => {
+        generationCount = parseInt(e.target.value, 10);
+        generationCountValue.textContent = generationCount;
+    });
+
+    generateButton.addEventListener('click', handleGenerateClick);
+    resetButton.addEventListener('click', handleReset);
+    downloadAllButton.addEventListener('click', handleDownloadAll);
+
+    resultsGrid.addEventListener('click', (e) => {
+        const target = e.target;
+        const downloadBtn = target.closest('.download-button');
+        if (downloadBtn) {
+            const index = downloadBtn.dataset.index;
+            const image = generatedImages[index];
+            if (image && image.status === 'completed') {
+                handleDownload(image.src, image.name);
+            }
+            return;
+        }
+
+        const imageContainer = target.closest('[data-index]');
+        if (imageContainer) {
+             const index = imageContainer.dataset.index;
+             const image = generatedImages[index];
+             if (image && image.status === 'completed') {
+                 modalImage.src = image.src;
+                 imageModal.classList.add('show');
+             }
+        }
+    });
+
+    modalCloseButton.addEventListener('click', () => imageModal.classList.remove('show'));
+    imageModal.addEventListener('click', (e) => {
+        if (e.target === imageModal) {
+            imageModal.classList.remove('show');
+        }
+    });
+});
+</script>
+
+</body>
+</html>
+
