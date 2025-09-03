@@ -76,6 +76,5 @@ tags: [바이브코딩, 웹앱, 증명사진]
 
 * 🔗 **나노 바나나 프롬프트 참고**: [https://tigerjk9.github.io/ai/nano-banana/](https://tigerjk9.github.io/ai/nano-banana/)
 * 🌐 **라이브 데모**: [ai-id-photo-studio.netlify.app](https://ai-id-photo-studio.netlify.app/) 
-* 🔗 **GitHub 저장소**: [https://github.com/tigerjk9/ai-id-photo-studio/tree/main](https://github.com/tigerjk9/ai-id-photo-studio/tree/main)
 
 
