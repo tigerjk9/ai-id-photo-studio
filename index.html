@@ -300,7 +300,7 @@ document.addEventListener('DOMContentLoaded', () => {
     const getBase64Data = (dataUrl) => dataUrl.split(',')[1];
 
     const generateImageAPI = async (userApiKey, prompt, base64ImageData, mimeType, retries = 3, delay = 1000) => {
-        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image-preview:generateContent?key=${userApiKey}`;
+        const apiUrl = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash-image:generateContent?key=${userApiKey}`;
         const payload = {
             contents: [{ parts: [{ text: prompt }, { inlineData: { mimeType: mimeType, data: base64ImageData } }] }],
             generationConfig: { responseModalities: ['IMAGE'] },
